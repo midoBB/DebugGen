@@ -45,6 +45,36 @@ The executable will be created in the `dist` directory.
 -   Generates debug configurations for Go, TypeScript/JavaScript, Rust, and Python.
 -   Respects `.gitignore` to exclude files and directories from the search.
 
+## Neovim
+
+If you're using Neovim, feel free to check out my configuration to make everything work seamlessly:
+
+```lua
+-- Inside your nvim-dap configuration
+
+-- setup dap config by VsCode launch.json file
+local vscode = require("dap.ext.vscode")
+local json = require("plenary.json")
+vscode.json_decode = function(str)
+	local clean_str = json.json_strip_comments(str)
+	clean_str = clean_str:gsub('"type"%s*:%s*"lldb"', '"type": "codelldb"')
+	clean_str = clean_str:gsub('"type"%s*:%s*"debugpy"', '"type": "python"')
+	clean_str = clean_str:gsub('"type"%s*:%s*"go"', '"type": "delve"')
+	clean_str = clean_str:gsub('"type"%s*:%s*"chrome"', '"type": "pwa-chrome"')
+	return vim.json.decode(clean_str)
+end
+vscode.load_launchjs(nil, {
+	go = { "go" },
+	python = { "py" },
+	gdb = { "c", "cpp", "rust" },
+	lldb = { "c", "cpp", "rust" },
+	codelldb = { "c", "cpp", "rust" },
+	cppdbg = { "c", "cpp", "rust" },
+})
+```
+
+I also recommend using [nvim-dap-vscode-js](https://github.com/mxsdev/nvim-dap-vscode-js) to provide a working JS/TS debuggnig experience.
+
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or pull requests.
