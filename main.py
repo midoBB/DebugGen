@@ -214,10 +214,7 @@ def generate_launch_json():
         with open(".vscode/launch.json", "w") as f:
             json.dump(launch_json, f, indent=4)
 
-        print(
-            f"Generated launch.json with {
-                len(configurations)} configuration(s)"
-        )
+        print(f"Generated launch.json with{ len(configurations)}configuration(s)")
     else:
         print("No supported project markers (go.mod, package.json, Cargo.toml) found")
 
