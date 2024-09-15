@@ -31,17 +31,10 @@ This will create a `.vscode/launch.json` file in your project root.
 
 ## Build
 
-To build the executable yourself, you'll need to install PyInstaller:
+To build the executable yourself, run:
 
 ```bash
-pip install toml gitignore_parser
-pip install pyinstaller
-```
-
-Then, run the following command to build the executable:
-
-```bash
-pyinstaller main.spec
+make build
 ```
 
 The executable will be created in the `dist` directory.

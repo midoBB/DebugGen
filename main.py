@@ -69,7 +69,7 @@ def generate_go_config(go_root: str) -> Dict:
         "name": f"Launch Go Package ({os.path.relpath(go_root)})",
         "type": "go",
         "request": "launch",
-        "mode": "auto",
+        "console": "integratedTerminal",
         "program": go_root,
     }
 
@@ -85,7 +85,18 @@ def generate_typescript_config(ts_root: str) -> Dict:
 
 
 def generate_python_config(file_path: str) -> Dict:
-    return {
+    venv_path = os.getenv("VIRTUAL_ENV") or os.getenv("CONDA_PREFIX")
+    python_path = None
+    if venv_path:
+        if os.name == "nt":  # Windows
+            python_path = os.path.join(venv_path, "Scripts", "python")
+        else:  # Unix-like systems (Linux, macOS)
+            python_path = os.path.join(venv_path, "bin", "python")
+        # Ensure the python_path exists
+        if not os.path.exists(python_path):
+            python_path = None
+
+    config = {
         "name": f"Python: {os.path.relpath(file_path)}",
         "type": "debugpy",
         "request": "launch",
@@ -93,96 +104,51 @@ def generate_python_config(file_path: str) -> Dict:
         "console": "integratedTerminal",
     }
 
+    if python_path:
+        config["pythonPath"] = os.path.relpath(python_path)
+
+    return config
+
 
 def generate_rust_configs(cargo_toml_path: str) -> List[Dict]:
     with open(cargo_toml_path, "r") as f:
         cargo_toml = toml.load(f)
-
     if "package" not in cargo_toml:
         return []
     package_name = cargo_toml["package"]["name"]
     bin_targets = cargo_toml.get("bin", [])
-
     configs = []
-
     if not bin_targets:
         # Assume it's a library or single binary project
         bin_name = package_name.replace("-", "_")
-        configs.extend(
-            [
-                {
-                    "type": "lldb",
-                    "request": "launch",
-                    "name": f"Debug executable '{bin_name}'",
-                    "cargo": {
-                        "args": [
-                            "build",
-                            f"--bin={bin_name}",
-                            f"--package={package_name}",
-                        ],
-                        "filter": {"name": bin_name, "kind": "bin"},
-                    },
-                    "args": [],
-                    "cwd": "${workspaceFolder}",
-                },
-                {
-                    "type": "lldb",
-                    "request": "launch",
-                    "name": f"Debug unit tests in executable '{bin_name}'",
-                    "cargo": {
-                        "args": [
-                            "test",
-                            "--no-run",
-                            f"--bin={bin_name}",
-                            f"--package={package_name}",
-                        ],
-                        "filter": {"name": bin_name, "kind": "bin"},
-                    },
-                    "args": [],
-                    "cwd": "${workspaceFolder}",
-                },
-            ]
+        configs.append(
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": f"Debug executable '{bin_name}'",
+                "preLaunchTask": "rust: cargo build",
+                "console": "integratedTerminal",
+                "program": f"${{workspaceFolder}}/target/debug/{bin_name}",
+                "args": [],
+                "cwd": "${workspaceFolder}",
+            }
         )
     else:
         # Multiple binary targets
         for target in bin_targets:
             bin_name = target["name"]
-            configs.extend(
-                [
-                    {
-                        "type": "lldb",
-                        "request": "launch",
-                        "name": f"Debug executable '{bin_name}'",
-                        "cargo": {
-                            "args": [
-                                "build",
-                                f"--bin={bin_name}",
-                                f"--package={package_name}",
-                            ],
-                            "filter": {"name": bin_name, "kind": "bin"},
-                        },
-                        "args": [],
-                        "cwd": "${workspaceFolder}",
-                    },
-                    {
-                        "type": "lldb",
-                        "request": "launch",
-                        "name": f"Debug unit tests in executable '{bin_name}'",
-                        "cargo": {
-                            "args": [
-                                "test",
-                                "--no-run",
-                                f"--bin={bin_name}",
-                                f"--package={package_name}",
-                            ],
-                            "filter": {"name": bin_name, "kind": "bin"},
-                        },
-                        "args": [],
-                        "cwd": "${workspaceFolder}",
-                    },
-                ]
+            configs.append(
+                {
+                    "type": "lldb",
+                    "request": "launch",
+                    "name": f"Debug executable '{bin_name}'",
+                    "preLaunchTask": "rust: cargo build",
+                    "console": "integratedTerminal",
+                    "program": f"${{workspaceFolder}}/target/debug/{bin_name}",
+                    "args": [],
+                    "cwd": "${workspaceFolder}",
+                }
             )
-
     return configs
 
 
@@ -214,7 +180,8 @@ def generate_launch_json():
         with open(".vscode/launch.json", "w") as f:
             json.dump(launch_json, f, indent=4)
 
-        print(f"Generated launch.json with{ len(configurations)}configuration(s)")
+        print(f"Generated launch.json with {
+              len(configurations)} configuration(s)")
     else:
         print("No supported project markers (go.mod, package.json, Cargo.toml) found")
 
