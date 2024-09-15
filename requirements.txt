@@ -1,0 +1,2 @@
+gitignore_parser==0.1.11
+toml==0.10.2
