@@ -61,6 +61,7 @@ vscode.json_decode = function(str)
 	clean_str = clean_str:gsub('"type"%s*:%s*"debugpy"', '"type": "python"')
 	clean_str = clean_str:gsub('"type"%s*:%s*"go"', '"type": "delve"')
 	clean_str = clean_str:gsub('"type"%s*:%s*"chrome"', '"type": "pwa-chrome"')
+    	clean_str = clean_str:gsub('"preLaunchTask"%s*:%s*"rust: cargo build"', '"preLaunchTask": "cargo build"')
 	return vim.json.decode(clean_str)
 end
 vscode.load_launchjs(nil, {
